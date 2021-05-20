@@ -1,0 +1,2 @@
+address: :3000
+db: "user=root password=secret dbname=dbname sslmode=disable"
