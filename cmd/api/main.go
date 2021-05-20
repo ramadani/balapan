@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/go-zookeeper/zk"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -11,15 +12,27 @@ import (
 	"github.com/ramadani/balapan/internal/app/command"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
+	"time"
 )
 
-type Config struct {
-	Address string `yaml:"address"`
+type RaceHandler struct {
+	Enabled bool   `yaml:"enabled"`
 	Driver  string `yaml:"driver"`
-	DB      string `yaml:"db"`
+}
+
+type ZookeeperConfig struct {
+	Address        []string      `yaml:"address"`
+	SessionTimeout time.Duration `yaml:"sessionTimeout"`
+}
+
+type Config struct {
+	Address     string          `yaml:"address"`
+	DB          string          `yaml:"db"`
+	RaceHandler RaceHandler     `yaml:"raceHandler"`
+	Zookeeper   ZookeeperConfig `yaml:"zookeeper"`
+	SleepIn     time.Duration   `yaml:"sleepIn"`
 }
 
 func main() {
@@ -50,11 +63,24 @@ func main() {
 
 	db, err := sqlx.Connect("postgres", conf.DB)
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 
 	rewardsRepo := reposqlx.NewRewardsRepository(db)
 	usageCommand := command.NewUsageRewardsCommand(rewardsRepo)
+
+	if conf.RaceHandler.Enabled {
+		switch conf.RaceHandler.Driver {
+		case "zookeeper":
+			zkConn, _, err := zk.Connect(conf.Zookeeper.Address, conf.Zookeeper.SessionTimeout)
+			if err != nil {
+				panic(err)
+			}
+			usageCommand = command.NewUsageRewardsLockerCommand(usageCommand, zkConn)
+		}
+	}
+
+	usageCommand = command.NewUsageRewardsSleeperCommand(usageCommand, conf.SleepIn)
 	usageCommand = command.NewUsageRewardsLoggerCommand(usageCommand)
 
 	rewardsHandler := handler.NewRewardsHandler(usageCommand)
