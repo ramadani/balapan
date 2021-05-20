@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-zookeeper/zk"
+	"github.com/ramadani/balapan/internal/app/command"
 	"github.com/ramadani/balapan/internal/app/command/model"
 )
 
 type usageRewardsLockerCommand struct {
-	next   UsageRewardsCommander
+	next   command.UsageRewardsCommander
 	zkConn *zk.Conn
 }
 
@@ -23,6 +24,6 @@ func (c *usageRewardsLockerCommand) Do(ctx context.Context, data *model.UsageRew
 	return c.next.Do(ctx, data)
 }
 
-func NewUsageRewardsLockerCommand(next UsageRewardsCommander, zkConn *zk.Conn) UsageRewardsCommander {
+func NewUsageRewardsLockerCommand(next command.UsageRewardsCommander, zkConn *zk.Conn) command.UsageRewardsCommander {
 	return &usageRewardsLockerCommand{next: next, zkConn: zkConn}
 }

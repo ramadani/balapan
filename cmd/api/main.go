@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
+	cmdadapter "github.com/ramadani/balapan/internal/adapter/app/command"
 	reposqlx "github.com/ramadani/balapan/internal/adapter/repository/sqlx"
 	"github.com/ramadani/balapan/internal/adapter/rest/echo/handler"
 	"github.com/ramadani/balapan/internal/app/command"
@@ -76,7 +77,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			usageCommand = command.NewUsageRewardsLockerCommand(usageCommand, zkConn)
+			usageCommand = cmdadapter.NewUsageRewardsLockerCommand(usageCommand, zkConn)
 		}
 	}
 
