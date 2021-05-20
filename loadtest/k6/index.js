@@ -18,6 +18,7 @@ export default function () {
     const baseUrl = config.hosts[vId % config.hosts.length];
     const input = {
         id: data.data.id,
+        userId: `${vId}`.padStart(8, 0),
         amount: data.data.amount,
     };
 

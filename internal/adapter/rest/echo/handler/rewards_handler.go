@@ -23,6 +23,7 @@ func (h *RewardsHandler) Claim(c echo.Context) error {
 
 	data := &rmodel.ClaimRewards{
 		ID:     id,
+		UserID: req.UserID,
 		Amount: req.Amount,
 	}
 

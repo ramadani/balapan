@@ -68,7 +68,11 @@ func main() {
 	}
 
 	rewardsRepo := reposqlx.NewRewardsRepository(db)
-	claimCommand := command.NewClaimRewardsCommand(rewardsRepo)
+	historyRepo := reposqlx.NewHistoryRepository(db)
+
+	claimHistoryCommand := command.NewClaimRewardsHistoryCommand(historyRepo)
+	claimUsageCommand := command.NewClaimRewardsUsageCommand(rewardsRepo)
+	claimCommand := command.NewClaimRewardsMiddlewareCommand(claimUsageCommand, claimHistoryCommand)
 
 	if conf.RaceHandler.Enabled {
 		switch conf.RaceHandler.Driver {

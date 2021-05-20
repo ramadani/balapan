@@ -2,37 +2,28 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"github.com/ramadani/balapan/internal/app/command/model"
-	"github.com/ramadani/balapan/internal/domain/rewards"
 )
 
 type ClaimRewardsCommander interface {
 	Do(ctx context.Context, data *model.ClaimRewards) error
 }
 
-type claimRewardsCommand struct {
-	rewardsRepo rewards.Repository
+type claimRewardsMiddlewareCommand struct {
+	prev, next ClaimRewardsCommander
 }
 
-func (c *claimRewardsCommand) Do(ctx context.Context, data *model.ClaimRewards) error {
-	rewards, err := c.rewardsRepo.FindByID(ctx, data.ID)
-	if err != nil {
+func (c *claimRewardsMiddlewareCommand) Do(ctx context.Context, data *model.ClaimRewards) error {
+	if err := c.prev.Do(ctx, data); err != nil {
 		return err
 	}
 
-	rewards.TransactionUsage += 1
-	rewards.RewardsUsage += data.Amount
-
-	if rewards.TransactionUsage > rewards.TransactionLimit || rewards.RewardsUsage > rewards.RewardsLimit {
-		return fmt.Errorf("quota limit exceeded")
-	}
-
-	err = c.rewardsRepo.Update(ctx, rewards)
-
-	return err
+	return c.next.Do(ctx, data)
 }
 
-func NewClaimRewardsCommand(rewardsRepo rewards.Repository) ClaimRewardsCommander {
-	return &claimRewardsCommand{rewardsRepo: rewardsRepo}
+func NewClaimRewardsMiddlewareCommand(prev, next ClaimRewardsCommander) ClaimRewardsCommander {
+	return &claimRewardsMiddlewareCommand{
+		prev: prev,
+		next: next,
+	}
 }

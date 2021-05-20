@@ -9,6 +9,7 @@ export function request(data, config) {
   };
 
   const body = {
+    userId: data.userId,
     amount: data.amount,
   };
 
