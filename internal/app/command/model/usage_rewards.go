@@ -1,6 +1,7 @@
 package model
 
-type UsageRewards struct {
+type ClaimRewards struct {
 	ID     string
+	UserID string
 	Amount int64
 }

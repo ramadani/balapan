@@ -1,7 +1,7 @@
 import http from 'k6/http';
 
 export function request(data, config) {
-  const url = `${config.baseUrl}/rewards/${data.id}/usage`;
+  const url = `${config.baseUrl}/rewards/${data.id}/claim`;
   const params = {
     headers: {
       'Content-Type': 'application/json',

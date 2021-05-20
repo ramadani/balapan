@@ -8,12 +8,12 @@ import (
 	"github.com/ramadani/balapan/internal/app/command/model"
 )
 
-type usageRewardsLockerCommand struct {
-	next   command.UsageRewardsCommander
+type claimRewardsLockerCommand struct {
+	next   command.ClaimRewardsCommander
 	zkConn *zk.Conn
 }
 
-func (c *usageRewardsLockerCommand) Do(ctx context.Context, data *model.UsageRewards) error {
+func (c *claimRewardsLockerCommand) Do(ctx context.Context, data *model.ClaimRewards) error {
 	locker := zk.NewLock(c.zkConn, fmt.Sprintf("/%s", data.ID), zk.WorldACL(zk.PermAll))
 
 	if err := locker.Lock(); err != nil {
@@ -24,6 +24,6 @@ func (c *usageRewardsLockerCommand) Do(ctx context.Context, data *model.UsageRew
 	return c.next.Do(ctx, data)
 }
 
-func NewUsageRewardsLockerCommand(next command.UsageRewardsCommander, zkConn *zk.Conn) command.UsageRewardsCommander {
-	return &usageRewardsLockerCommand{next: next, zkConn: zkConn}
+func NewClaimRewardsLockerCommand(next command.ClaimRewardsCommander, zkConn *zk.Conn) command.ClaimRewardsCommander {
+	return &claimRewardsLockerCommand{next: next, zkConn: zkConn}
 }

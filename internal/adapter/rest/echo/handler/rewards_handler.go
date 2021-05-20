@@ -9,30 +9,30 @@ import (
 )
 
 type RewardsHandler struct {
-	usageCommand command.UsageRewardsCommander
+	claimCommand command.ClaimRewardsCommander
 }
 
-func (h *RewardsHandler) Usage(c echo.Context) error {
+func (h *RewardsHandler) Claim(c echo.Context) error {
 	ctx := c.Request().Context()
 	id := c.Param("id")
-	req := new(model.UsageRewardsRequest)
+	req := new(model.ClaimRewardsRequest)
 
 	if err := c.Bind(&req); err != nil {
 		return err
 	}
 
-	data := &rmodel.UsageRewards{
+	data := &rmodel.ClaimRewards{
 		ID:     id,
 		Amount: req.Amount,
 	}
 
-	if err := h.usageCommand.Do(ctx, data); err != nil {
+	if err := h.claimCommand.Do(ctx, data); err != nil {
 		return err
 	}
 
 	return c.NoContent(http.StatusOK)
 }
 
-func NewRewardsHandler(usageCommand command.UsageRewardsCommander) *RewardsHandler {
-	return &RewardsHandler{usageCommand: usageCommand}
+func NewRewardsHandler(claimCommand command.ClaimRewardsCommander) *RewardsHandler {
+	return &RewardsHandler{claimCommand: claimCommand}
 }

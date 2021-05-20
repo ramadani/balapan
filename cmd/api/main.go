@@ -68,7 +68,7 @@ func main() {
 	}
 
 	rewardsRepo := reposqlx.NewRewardsRepository(db)
-	usageCommand := command.NewUsageRewardsCommand(rewardsRepo)
+	claimCommand := command.NewClaimRewardsCommand(rewardsRepo)
 
 	if conf.RaceHandler.Enabled {
 		switch conf.RaceHandler.Driver {
@@ -77,14 +77,14 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			usageCommand = cmdadapter.NewUsageRewardsLockerCommand(usageCommand, zkConn)
+			claimCommand = cmdadapter.NewClaimRewardsLockerCommand(claimCommand, zkConn)
 		}
 	}
 
-	usageCommand = command.NewUsageRewardsSleeperCommand(usageCommand, conf.SleepIn)
-	usageCommand = command.NewUsageRewardsLoggerCommand(usageCommand)
+	claimCommand = command.NewClaimRewardsSleeperCommand(claimCommand, conf.SleepIn)
+	claimCommand = command.NewClaimRewardsLoggerCommand(claimCommand)
 
-	rewardsHandler := handler.NewRewardsHandler(usageCommand)
+	rewardsHandler := handler.NewRewardsHandler(claimCommand)
 
 	e := echo.New()
 	e.HideBanner = true
@@ -92,7 +92,7 @@ func main() {
 	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.PUT("/rewards/:id/usage", rewardsHandler.Usage)
+	e.PUT("/rewards/:id/claim", rewardsHandler.Claim)
 
 	// Start server
 	e.Logger.Fatal(e.Start(conf.Address))

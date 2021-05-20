@@ -7,15 +7,15 @@ import (
 	"github.com/ramadani/balapan/internal/domain/rewards"
 )
 
-type UsageRewardsCommander interface {
-	Do(ctx context.Context, data *model.UsageRewards) error
+type ClaimRewardsCommander interface {
+	Do(ctx context.Context, data *model.ClaimRewards) error
 }
 
-type usageRewardsCommand struct {
+type claimRewardsCommand struct {
 	rewardsRepo rewards.Repository
 }
 
-func (c *usageRewardsCommand) Do(ctx context.Context, data *model.UsageRewards) error {
+func (c *claimRewardsCommand) Do(ctx context.Context, data *model.ClaimRewards) error {
 	rewards, err := c.rewardsRepo.FindByID(ctx, data.ID)
 	if err != nil {
 		return err
@@ -33,6 +33,6 @@ func (c *usageRewardsCommand) Do(ctx context.Context, data *model.UsageRewards) 
 	return err
 }
 
-func NewUsageRewardsCommand(rewardsRepo rewards.Repository) UsageRewardsCommander {
-	return &usageRewardsCommand{rewardsRepo: rewardsRepo}
+func NewClaimRewardsCommand(rewardsRepo rewards.Repository) ClaimRewardsCommander {
+	return &claimRewardsCommand{rewardsRepo: rewardsRepo}
 }

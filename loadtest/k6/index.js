@@ -1,5 +1,5 @@
 import {check} from 'k6';
-import {request as usageReq} from './requests/usage.js';
+import {request as claimReq} from './requests/claim.js';
 
 const config = JSON.parse(open('./config.json'));
 const data = JSON.parse(open('./data.json'));
@@ -21,7 +21,7 @@ export default function () {
         amount: data.data.amount,
     };
 
-    const resp = usageReq(input, {baseUrl});
+    const resp = claimReq(input, {baseUrl});
 
     check(resp, {
         'success': (r) => {

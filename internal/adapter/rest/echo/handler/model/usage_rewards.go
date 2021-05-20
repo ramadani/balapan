@@ -1,5 +1,6 @@
 package model
 
-type UsageRewardsRequest struct {
-	Amount int64 `json:"amount"`
+type ClaimRewardsRequest struct {
+	UserID string `json:"userId"`
+	Amount int64  `json:"amount"`
 }
