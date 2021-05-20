@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -22,7 +23,7 @@ type Config struct {
 }
 
 func main() {
-	address := flag.String("address", ":3000", "server address")
+	address := flag.String("address", "", "server address")
 
 	flag.Parse()
 
@@ -43,6 +44,10 @@ func main() {
 		panic(err)
 	}
 
+	if addr := *address; strings.TrimSpace(addr) != "" {
+		conf.Address = addr
+	}
+
 	db, err := sqlx.Connect("postgres", conf.DB)
 	if err != nil {
 		log.Fatalln(err)
@@ -50,17 +55,18 @@ func main() {
 
 	rewardsRepo := reposqlx.NewRewardsRepository(db)
 	usageCommand := command.NewUsageRewardsCommand(rewardsRepo)
+	usageCommand = command.NewUsageRewardsLoggerCommand(usageCommand)
 
 	rewardsHandler := handler.NewRewardsHandler(usageCommand)
 
 	e := echo.New()
 	e.HideBanner = true
 
-	e.Use(middleware.Logger())
+	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	e.PUT("/rewards/:id/usage", rewardsHandler.Usage)
 
 	// Start server
-	e.Logger.Fatal(e.Start(*address))
+	e.Logger.Fatal(e.Start(conf.Address))
 }
