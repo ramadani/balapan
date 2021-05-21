@@ -1,11 +1,16 @@
 address: :3000
 db: "user=root password=secret dbname=dbname sslmode=disable"
 
+sleepIn: 5ms
+
 raceHandler:
   enabled: true
-  driver: zookeeper # zookeeper, redis
+  driver: redis # zookeeper, redis
+  zookeeper:
+    address:
+      - localhost:2181
+    sessionTimeout: 5s
 
-zookeeper:
-  address:
-    - localhost:2181
-  sessionTimeout: 5 # seconds
+  redis:
+    address: 127.0.0.1:6379
+    syncIn: 3s

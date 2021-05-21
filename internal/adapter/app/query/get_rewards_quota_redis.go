@@ -8,12 +8,12 @@ import (
 	"strconv"
 )
 
-type getRewardsLimitRedisQueryer struct {
+type getRewardsQuotaRedisQueryer struct {
 	redisClient *redis.Client
 	keyFormat   string
 }
 
-func (q *getRewardsLimitRedisQueryer) Do(ctx context.Context, id string) (int64, error) {
+func (q *getRewardsQuotaRedisQueryer) Do(ctx context.Context, id string) (int64, error) {
 	key := fmt.Sprintf(q.keyFormat, id)
 
 	limit, err := q.redisClient.Get(ctx, key).Result()
@@ -26,8 +26,8 @@ func (q *getRewardsLimitRedisQueryer) Do(ctx context.Context, id string) (int64,
 	return int64(res), nil
 }
 
-func NewGetRewardsLimitRedisQueryer(redisClient *redis.Client, keyFormat string) query.GetRewardsLimitQueryer {
-	return &getRewardsLimitRedisQueryer{
+func NewGetRewardsQuotaRedisQueryer(redisClient *redis.Client, keyFormat string) query.GetRewardsQuotaQueryer {
+	return &getRewardsQuotaRedisQueryer{
 		redisClient: redisClient,
 		keyFormat:   keyFormat,
 	}
