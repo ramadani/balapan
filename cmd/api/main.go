@@ -159,9 +159,9 @@ func main() {
 					time.Sleep(raceHandler.Redis.SyncIn)
 				}
 			}()
-		default:
-			claimCommand = command.NewClaimRewardsMiddlewareCommand(claimUsageCommand, claimHistoryCommand)
 		}
+	} else {
+		claimCommand = command.NewClaimRewardsMiddlewareCommand(claimUsageCommand, claimHistoryCommand)
 	}
 
 	claimCommand = command.NewClaimRewardsSleeperCommand(claimCommand, conf.SleepIn)
