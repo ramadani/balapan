@@ -14,8 +14,10 @@ import (
 	reposqlx "github.com/ramadani/balapan/internal/adapter/repository/sqlx"
 	"github.com/ramadani/balapan/internal/adapter/rest/echo/handler"
 	"github.com/ramadani/balapan/internal/app/command"
+	"github.com/ramadani/balapan/internal/domain/rewards"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -103,6 +105,31 @@ func main() {
 			rewardsQuotaLimitKeyFormat := "rewards-quota-limit-%s"
 			rewardsQuotaUsageKeyFormat := "rewards-quota-usage-%s"
 
+			usageTtl := time.Duration(0)
+			lockExpIn := time.Second * 3
+			sleepRetry := 50 * time.Millisecond
+			maxRetry := 10
+
+			setNxTransactionQuotaUsageCommand := cmdadapter.NewSetNXRewardsQuotaUsageRedisCommand(
+				rewardsRepo,
+				redisClient,
+				transactionQuotaUsageKeyFormat,
+				usageTtl,
+				lockExpIn,
+				func(r *rewards.Rewards) int64 { return r.TransactionUsage },
+			)
+			setNxTransactionQuotaUsageCommand = command.NewSetNXRewardsQuotaRetryableCommand(setNxTransactionQuotaUsageCommand, maxRetry, sleepRetry)
+
+			setNxRewardsQuotaUsageCommand := cmdadapter.NewSetNXRewardsQuotaUsageRedisCommand(
+				rewardsRepo,
+				redisClient,
+				rewardsQuotaUsageKeyFormat,
+				usageTtl,
+				lockExpIn,
+				func(r *rewards.Rewards) int64 { return r.RewardsUsage },
+			)
+			setNxRewardsQuotaUsageCommand = command.NewSetNXRewardsQuotaRetryableCommand(setNxRewardsQuotaUsageCommand, maxRetry, sleepRetry)
+
 			setTransactionQuotaLimitCommand := cmdadapter.NewSetRewardsLimitRedisCommand(redisClient, transactionQuotaLimitKeyFormat, time.Hour*1)
 			getTransactionQuotaLimitQuery := query.NewGetRewardsQuotaRedisQueryer(redisClient, transactionQuotaLimitKeyFormat)
 			getTransactionQuotaUsageQuery := query.NewGetRewardsQuotaRedisQueryer(redisClient, transactionQuotaUsageKeyFormat)
@@ -111,17 +138,23 @@ func main() {
 			getRewardsQuotaLimitQuery := query.NewGetRewardsQuotaRedisQueryer(redisClient, rewardsQuotaLimitKeyFormat)
 			getRewardsQuotaUsageQuery := query.NewGetRewardsQuotaRedisQueryer(redisClient, rewardsQuotaUsageKeyFormat)
 
-			claimCommand = cmdadapter.NewClaimRewardsQuotaUsageRedisCommand(
-				claimHistoryCommand,
-				getRewardsQuotaLimitQuery,
-				redisClient,
-				rewardsQuotaUsageKeyFormat,
+			claimCommand = command.NewClaimRewardsMiddlewareCommand(
+				command.NewClaimRewardsSetNXQuotaCommand(setNxRewardsQuotaUsageCommand),
+				cmdadapter.NewClaimRewardsQuotaUsageRedisCommand(
+					claimHistoryCommand,
+					getRewardsQuotaLimitQuery,
+					redisClient,
+					rewardsQuotaUsageKeyFormat,
+				),
 			)
-			claimCommand = cmdadapter.NewClaimTransactionQuotaUsageRedisCommand(
-				claimCommand,
-				getTransactionQuotaLimitQuery,
-				redisClient,
-				transactionQuotaUsageKeyFormat,
+			claimCommand = command.NewClaimRewardsMiddlewareCommand(
+				command.NewClaimRewardsSetNXQuotaCommand(setNxTransactionQuotaUsageCommand),
+				cmdadapter.NewClaimTransactionQuotaUsageRedisCommand(
+					claimCommand,
+					getTransactionQuotaLimitQuery,
+					redisClient,
+					transactionQuotaUsageKeyFormat,
+				),
 			)
 
 			go func() {
@@ -129,30 +162,34 @@ func main() {
 					ctx := context.Background()
 					items, err := rewardsRepo.FindAll(ctx)
 					if err != nil {
-						panic(err)
+						log.Println(err)
 					}
 
 					for _, item := range items {
 						if err = setTransactionQuotaLimitCommand.Do(ctx, item.ID, item.TransactionLimit); err != nil {
-							panic(err)
+							log.Println(err)
 						}
 						if usage, err := getTransactionQuotaUsageQuery.Do(ctx, item.ID); err != nil {
-							panic(err)
+							log.Println(err)
 						} else {
-							item.TransactionUsage = usage
+							if usage != 0 {
+								item.TransactionUsage = usage
+							}
 						}
 
 						if err = setRewardsQuotaLimitCommand.Do(ctx, item.ID, item.RewardsLimit); err != nil {
-							panic(err)
+							log.Println(err)
 						}
 						if usage, err := getRewardsQuotaUsageQuery.Do(ctx, item.ID); err != nil {
-							panic(err)
+							log.Println(err)
 						} else {
-							item.RewardsUsage = usage
+							if usage != 0 {
+								item.RewardsUsage = usage
+							}
 						}
 
 						if err = rewardsRepo.Update(ctx, item); err != nil {
-							panic(err)
+							log.Println(err)
 						}
 					}
 
