@@ -14,3 +14,9 @@ raceHandler:
   redis:
     address: 127.0.0.1:6379
     syncIn: 3s
+    quota:
+      usageExpIn: 3600s
+      lockIn: 5s
+    retry:
+      max: 10
+      sleepIn: 50ms

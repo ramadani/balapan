@@ -38,6 +38,14 @@ type ZookeeperConfig struct {
 type RedisConfig struct {
 	Address string        `yaml:"address"`
 	SyncIn  time.Duration `yaml:"syncIn"`
+	Quota   struct {
+		UsageExpIn time.Duration `yaml:"usageExpIn"`
+		LockIn     time.Duration `yaml:"lockIn"`
+	} `yaml:"quota"`
+	Retry struct {
+		Max     int           `yaml:"max"`
+		SleepIn time.Duration `yaml:"sleepIn"`
+	} `yaml:"retry"`
 }
 
 type Config struct {
@@ -87,7 +95,7 @@ func main() {
 	claimUsageCommand := command.NewClaimRewardsUsageCommand(rewardsRepo)
 
 	if raceHandler := conf.RaceHandler; raceHandler.Enabled {
-		switch conf.RaceHandler.Driver {
+		switch raceHandler.Driver {
 		case "zookeeper":
 			zkConn, _, err := zk.Connect(raceHandler.Zookeeper.Address, raceHandler.Zookeeper.SessionTimeout)
 			if err != nil {
@@ -105,10 +113,10 @@ func main() {
 			rewardsQuotaLimitKeyFormat := "rewards-quota-limit-%s"
 			rewardsQuotaUsageKeyFormat := "rewards-quota-usage-%s"
 
-			usageTtl := time.Duration(0)
-			lockExpIn := time.Second * 3
-			sleepRetry := 50 * time.Millisecond
-			maxRetry := 10
+			usageTtl := raceHandler.Redis.Quota.UsageExpIn
+			lockExpIn := raceHandler.Redis.Quota.LockIn
+			maxRetry := raceHandler.Redis.Retry.Max
+			sleepRetry := raceHandler.Redis.Retry.SleepIn
 
 			setNxTransactionQuotaUsageCommand := cmdadapter.NewSetNXRewardsQuotaUsageRedisCommand(
 				rewardsRepo,
